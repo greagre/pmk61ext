@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15181b">
+<title>МК-61 · расширение и задание по сохранению программ</title>
+<style>
+  :root{
+    --bg:#15181b; --panel:#1b1f23; --chip:#232a31; --edge:#2b333b;
+    --text:#e6e9ec; --muted:#9aa4ad; --accent:#6fb3ef; --ok:#6fce8e; --bad:#ef8f8f;
+    --warn:#e5c07b; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#eef1f6; --panel:#fff; --chip:#f4f6fa; --edge:#e3e8f0;
+           --text:#17212b; --muted:#6b7a8c; --accent:#2f6feb; --ok:#17864a;
+           --bad:#c0392b; --warn:#a06a10; }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Roboto","Segoe UI",sans-serif;
+    padding:14px 12px 40px; max-width:820px; margin:0 auto;
+    -webkit-text-size-adjust:100%;
+  }
+  h1{font-size:20px; line-height:1.25; margin:0 0 4px}
+  h2{font-size:16px; margin:26px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--edge)}
+  h3{font-size:14px; margin:16px 0 6px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+  p{margin:8px 0}
+  .sub{color:var(--muted); font-size:13px; margin:0 0 6px}
+  .card{background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:12px; margin:10px 0}
+  .goal{border-left:3px solid var(--accent); padding-left:10px}
+  .ext{border-left:3px solid var(--ok); padding-left:10px}
+  .tw{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:8px 0}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:0}
+  th,td{text-align:left; vertical-align:top; padding:7px 8px; border-bottom:1px solid var(--edge)}
+  th{background:var(--chip); font-weight:600; font-size:12.5px; color:var(--muted);
+     text-transform:uppercase; letter-spacing:.03em; white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td:first-child{white-space:nowrap}
+  code{font-family:var(--mono); font-size:12.5px; background:var(--chip);
+       padding:1px 5px; border-radius:5px; word-break:break-word}
+  pre{font-family:var(--mono); font-size:12px; line-height:1.5; background:var(--chip);
+      border:1px solid var(--edge); border-radius:10px; padding:10px; margin:8px 0;
+      overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:pre; color:var(--text)}
+  ul,ol{margin:8px 0; padding-left:20px}
+  li{margin:4px 0}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .tag{display:inline-block; font-size:11.5px; padding:1px 7px; border-radius:20px;
+       border:1px solid var(--edge); background:var(--chip); color:var(--muted); margin-left:4px}
+  .tag.ok{color:var(--ok); border-color:var(--ok)}
+  .num{color:var(--muted); font-variant-numeric:tabular-nums}
+  .foot{margin-top:28px; padding-top:12px; border-top:1px solid var(--edge); color:var(--muted); font-size:12.5px}
+  @media (max-width:420px){
+    body{padding:10px 9px 40px; font-size:14.5px}
+    th,td{padding:6px 6px; font-size:13px}
+    pre{font-size:11px}
+    td:first-child{white-space:normal}
+  }
+</style>
+</head>
+<body>
+
+<h1>МК-61 · расширение и задание по сохранению программ</h1>
+<p class="sub">Что расширяем и как — и сводка договорённостей по сохранению. 26.11.2026.</p>
+
+<h2>Что за машина и что в ней расширено</h2>
+<div class="card ext">
+  <p><b>Базовая модель — МК-61.</b> Это не Б3-34: у МК-61 свой набор команд, свои страницы и своя клавиатура. Б3-34 в проекте упоминается только как <b>название расширения</b> — исторически это фамилия серии, но расширяем мы именно МК-61.</p>
+  <p>Расширение сделано надстройкой <code>ext61.js</code> поверх чистого ядра <code>core.js</code>: ядро считает как настоящий МК-61, а расширение даёт ему больше памяти и управление банками через команду <code>F0</code>.</p>
+</div>
+
+<h3>Что именно расширяется</h3>
+<div class="tw"><table>
+  <tr><th>Что</th><th>Было (МК-61)</th><th>Стало с расширением</th></tr>
+  <tr><td>Регистры</td><td>15 (R0…Re)</td><td><b>4 банка × 15 = 60</b> регистров</td></tr>
+  <tr><td>Программа</td><td>105 шагов</td><td><b>4 страницы × 105 = 420</b> шагов</td></tr>
+  <tr><td>Доступ к чужому банку</td><td>—</td><td><code>F0 40…4F</code> и <code>F0 60…6F</code> — <b>без переключения банка</b></td></tr>
+  <tr><td>Команда управления</td><td>—</td><td><code>F0</code> + второй байт, <b>две ячейки программы</b></td></tr>
+</table></div>
+
+<h3>Коды <code>F0</code> — как устроено сейчас</h3>
+<div class="tw"><table>
+  <tr><th>Код</th><th>Действие</th></tr>
+  <tr><td><code>F0 00…03</code></td><td>выбрать банк 0…3</td></tr>
+  <tr><td><code>F0 04</code></td><td>номер текущего банка → X</td></tr>
+  <tr><td><code>F0 05</code></td><td>адрес текущего банка → X</td></tr>
+  <tr><td><code>F0 06</code></td><td>адрес текущего банка ← X</td></tr>
+  <tr><td><code>F0 10</code></td><td>номер страницы → X</td></tr>
+  <tr><td><code>F0 11</code></td><td>номер страницы ← X</td></tr>
+  <tr><td><code>F0 20…23</code></td><td>выбрать страницу программы 0…3</td></tr>
+  <tr><td><code>F0 24</code></td><td>номер текущей страницы → X</td></tr>
+  <tr><td><code>F0 40…4F</code></td><td>x→П в банк-адресат (<code>0F</code> — это R0)</td></tr>
+  <tr><td><code>F0 60…6F</code></td><td>П→x из банка-адресата (<code>0F</code> — это R0)</td></tr>
+</table></div>
+
+<p><b>Важно для адресов:</b> <code>F0</code> вместе со вторым байтом занимает <b>две</b> ячейки программы. Обычная команда — одну, переход — три. Если считать <code>F0</code> за одну ячейку, все адреса после неё съезжают.</p>
+<p>Если <code>F0</code> стоит в последней ячейке страницы, второй байт берётся с нулевого адреса — как в реальном исполнении.</p>
+
+<h3>Что уже работает, а что нет</h3>
+<div class="tw"><table>
+  <tr><th>Часть</th><th>Состояние</th></tr>
+  <tr><td>Ядро: команды, регистры, переходы</td><td class="ok">готово</td></tr>
+  <tr><td>Расширение: банки, страницы, <code>F0 40/60</code></td><td class="ok">30/30 проверок</td></tr>
+  <tr><td>Декодер и листинг</td><td class="ok">32/32 проверки</td></tr>
+  <tr><td>Панель «Листинг расширения»</td><td class="ok">есть, только чтение</td></tr>
+  <tr><td>Ввод <code>F0</code> с клавиатуры калькулятора</td><td class="warn">в работе</td></tr>
+  <tr><td>Исполнение расширения в интерфейсе</td><td class="warn">следующий шаг</td></tr>
+</table></div>
+
+<h2>Главная цель задания</h2>
+<div class="card goal">
+  <p>Сохранять программу <b>парой</b>: коды калькулятора и ассемблер — вместе.</p>
+  <p>При <b>выгрузке</b> — всё в одно место (один файл).<br>
+     При <b>загрузке</b> — в разные места: коды в память телефона, текст в поле редактора.</p>
+</div>
+
+<h2>1. Поле в записи библиотеки</h2>
+<p>Сейчас в записи нет места для ассемблера — без него пара не сохранится.</p>
+<div class="tw"><table>
+  <tr><th>Поле</th><th>Что хранит</th><th>Статус</th></tr>
+  <tr><td><code>asm</code></td><td>текст программы: строки, метки, комментарии</td><td class="warn">добавить</td></tr>
+  <tr><td><code>has</code></td><td>что сохранено: коды / текст / оба</td><td class="warn">добавить</td></tr>
+  <tr><td><code>prog</code></td><td>коды программы</td><td class="ok">есть</td></tr>
+  <tr><td><code>regs</code></td><td>регистры</td><td class="ok">есть</td></tr>
+  <tr><td><code>name</code>, <code>date</code></td><td>имя и дата</td><td class="ok">есть</td></tr>
+</table></div>
+
+<h2>2. Формат TXT — одна программа</h2>
+<p>Нужен, чтобы <b>прочитать глазами</b>, открыть в блокноте на компьютере, поправить и попробовать. На телефоне это неудобно.</p>
+<p>Поэтому оформляем по-человечески, по-русски:</p>
+<pre>МК-61 · факториал
+Сохранено: 26.11.2026 · 00:40
+Угол: rad   R0 = 5   X = 1
+
+КОДЫ (для другого эмулятора):
+  05 40 01 5D 00 03
+
+ЛИСТИНГ:
+  00   5           5
+  01   40          x→П 0
+  02   01          1
+  03   5D 00 03    F L0 03
+
+АССЕМБЛЕР (правится в блокноте):
+  ; факториал числа из X
+  1
+  X→П 0
+  1
+  L03:
+  F L0 L03
+
+РЕГИСТРЫ:
+  R0=5  R1=0  R2=0  R3=0</pre>
+<p><b>Раздел «АССЕМБЛЕР» пишется только если</b> стоит галочка и текст реально есть. Нет текста — раздела нет вовсе: ни пустых заголовков, ни придуманных меток.</p>
+
+<h2>3. Кнопка «Сохранить»</h2>
+<p>Внизу два поля: код ассемблера и код калькулятора. При сохранении выбираем, что попадёт в список.</p>
+<div class="tw"><table>
+  <tr><th>Выбор</th><th>Что ляжет в запись</th></tr>
+  <tr><td>коды</td><td>только коды</td></tr>
+  <tr><td>ассемблер</td><td>только текст</td></tr>
+  <tr><td>оба<br><span class="tag">по умолчанию</span></td><td>пара целиком</td></tr>
+</table></div>
+
+<h2>4. Загрузка — раскладка по местам</h2>
+<div class="tw"><table>
+  <tr><th>Что в записи</th><th>Куда попадает</th></tr>
+  <tr><td>коды + текст</td><td>коды → память телефона, текст → поле редактора</td></tr>
+  <tr><td>только коды</td><td>коды → память, поле пустое</td></tr>
+  <tr><td>только текст</td><td>собрать через <code>asm61</code> → память, текст → поле</td></tr>
+  <tr><td>ничего</td><td>честно сказать, пустоту не грузить</td></tr>
+</table></div>
+<div class="card">
+  <p><b>Правило:</b> есть коды — программа рабочая, грузим коды. Текст память не определяет. Если текст расходится с кодами, приложение помечает «текст отличается от кодов», но программу не ломает.</p>
+</div>
+
+<h2>5. Программы из раздела кодов — в общем списке</h2>
+<p>Собранная программа должна быть видна в общем меню вместе со своим кодом и текстом, а не только после явного сохранения.</p>
+<p class="warn">Открытый вопрос: черновики. Предложение — помечать «черновик» и заменять при сохранении под тем же именем, чтобы список не забивался. Решение за тобой.</p>
+
+<h2>6. Пачка — только JSON</h2>
+<p>Библиотеку целиком в TXT <b>не сохраняем</b>. В TXT регистры всех программ собираются в общий котёл, и вторая затирает первую.</p>
+<pre>{
+  "version": 1,
+  "programs": [
+    { "name": "факториал", "prog": [5,64,1], "regs": [7,0,0], "asm": "…" },
+    { "name": "интеграл",  "prog": [4,20,11], "regs": [0,0,0], "asm": "…" }
+  ]
+}</pre>
+<p>Отличаем просто: есть массив <code>programs</code> — пачка. При загрузке раскладывается по отдельным программам.</p>
+
+<h2>7. Развёрнутая страница редактора</h2>
+<p>Делается после того, как формат проверен и работает.</p>
+<ul>
+  <li>большое поле на отдельной странице;</li>
+  <li>подсветка строк и меток;</li>
+  <li>номера адресов слева;</li>
+  <li>кнопки-вставки команд, включая <code>F0</code>;</li>
+  <li>проверка при вводе;</li>
+  <li>список ошибок с номерами строк.</li>
+</ul>
+
+<h2>8. Кнопка «Разобрать» (декомпилятор)</h2>
+<div class="tw"><table>
+  <tr><th>Кнопка</th><th>Берёт</th><th>Делает</th><th>Кладёт</th></tr>
+  <tr><td>Собрать</td><td>текст из поля</td><td><code>asm61</code></td><td>память</td></tr>
+  <tr><td>Разобрать</td><td>коды из памяти</td><td><code>disasm61</code></td><td>текст в поле</td></tr>
+</table></div>
+<p class="warn">Разбор восстанавливает рабочую программу, но не авторский текст: метки станут автоматическими (<code>L03</code> вместо <code>ЦИКЛ</code>), комментарии пропадут. Поэтому разбор — запасной путь для программ, сохранённых без ассемблера.</p>
+
+<h2>9. Отдельные решения</h2>
+<ul>
+  <li><b>Автоочистку памяти перед сборкой не делаем.</b> Память меняется в двух местах: сборка и загрузка из списка. Нужна чистота — кнопка сброса.</li>
+  <li><b>Сохранение в библиотеку на память не влияет</b> — это снимок, а не сама программа.</li>
+  <li><b>Собранное не пропадает:</b> память меняется в момент сборки.</li>
+</ul>
+
+<h2>Порядок работ</h2>
+<div class="tw"><table>
+  <tr><th>№</th><th>Шаг</th><th>Результат</th></tr>
+  <tr><td class="num">1</td><td>Поле <code>asm</code> + <code>has</code></td><td>пара хранится</td></tr>
+  <tr><td class="num">2</td><td>Раздел АССЕМБЛЕР в TXT</td><td>пара ездит в файле</td></tr>
+  <tr><td class="num">3</td><td>«Сохранить» пишет выбранное</td><td>один или оба</td></tr>
+  <tr><td class="num">4</td><td>Загрузка по таблице</td><td>раскладка в память/поле</td></tr>
+  <tr><td class="num">5</td><td>Программы из кодов в списке</td><td>всё на виду</td></tr>
+  <tr><td class="num">6</td><td>Пачка: JSON → раскладка</td><td class="ok">формат закрыт</td></tr>
+  <tr><td class="num">7</td><td>Развёрнутый редактор</td><td>удобство</td></tr>
+  <tr><td class="num">8</td><td>Кнопка «Разобрать»</td><td>обратный ход</td></tr>
+</table></div>
+
+<h2>Проверка — на настоящей программе</h2>
+<p>Тест на простых примерах ничего не докажет. Проверяем на <b>численном интегрировании</b>: там переходы назад, константы в регистрах и накопление суммы. Если интеграл выгрузится и загрузится без потерь — формат годный.</p>
+
+<div class="foot">
+  <p>Открытые вопросы к обсуждению:</p>
+  <ul>
+    <li>черновики в общем списке — автоматически с заменой или явное сохранение;</li>
+    <li>с чего начинаем: программа интеграла или шаг 1 (поле <code>asm</code>).</li>
+  </ul>
+</div>
+
+</body>
+</html>
